@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:fc="com.fusioncharts.components.*"
+			   x="157" y="195" width="313" height="325" backgroundAlpha="0"
+			   title="Diagnostic Surface Vector Scanner"
+			   close="widget_closeHandler()"
+			   creationComplete="widget_creationCompleteHandler()"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			
+			import mx.managers.PopUpManager;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private function widget_creationCompleteHandler():void
+			{
+				PopUpManager.removePopUp(parentApplication.dem_popUp);
+				PopUpManager.removePopUp(parentApplication.aqi_popUp);
+				
+				parentApplication.bb.selectedIndex = 0;
+				parentApplication.gll.clear();
+				parentApplication.map.level = 9;
+				parentApplication.map.centerAt(new WebMercatorMapPoint(-79.4075, 43.6));
+			}
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function widget_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	
+	<fc:FusionCharts id="fc"
+					 FCChartType="Line"
+					 FCDataXML="{parentApplication.scan}"
+					 x="0" y="0"
+					 width="313" height="295">
+		<fc:FCChartData ChartNoDataText=" " />
+	</fc:FusionCharts>
+
+</s:TitleWindow>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="650" y="90" width="300" height="300"
+			   title="Diagnostic Surface Vector Analysis"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function clear_clickHandler(event:MouseEvent):void
+			{
+				parentApplication.gll.clear();
+				parentApplication.demString = "";
+				parentApplication.demArray = [];
+			}
+		]]>
+	</fx:Script>
+	
+	<s:TextArea text="Quadrant grid sampling technique featuring a moveable 60 sq km scanning field with a variable surface vector. In this simulation, the AQI surface vector identity matrix is hardcoded so it only works with a vector of f(x)=x and fixed extent. The goal is identify genetic markers and store in signature db.&#13;&#13;Click on Guelph. Click on Newmarket.&#13;&#13;Press Scan.&#13;&#13;Press AQI. Press DEM."
+				borderVisible="false"
+				editable="false"
+				focusAlpha="0.0"
+				fontSize="13"
+				textAlign="justify"
+				x="25" y="10"
+				width="250" height="225" />
+	
+	<s:controlBarContent>
+		<s:HGroup horizontalAlign="center"
+				  y="215" width="100%">
+			<s:Button id="scan"
+					  label="Scan"
+					  width="56" />
+			<s:Button id="aqi"
+					  label="AQI"
+					  width="56" />
+			<s:Button id="dem"
+					  label="DEM"
+					  width="56" />
+			<s:Button label="Clear"
+					  click="clear_clickHandler(event)"
+					  width="56" />
+		</s:HGroup>
+	</s:controlBarContent>
+
+</s:TitleWindow>

@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   creationComplete="widget_creationCompleteHandler()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.symbols.CompositeSymbol;
+			import com.esri.ags.symbols.SimpleMarkerSymbol;
+			import com.esri.ags.symbols.TextSymbol;
+			import com.esri.ags.utils.WebMercatorUtil;
+			
+			import components.AQI_Readings_PopUp;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import spark.events.IndexChangeEvent;
+			
+			public var graphic:Graphic;
+			public var popUp:AQI_Readings_PopUp;
+			
+			private var aqiService:HTTPService = new HTTPService();
+			private var pollutantService:HTTPService = new HTTPService();
+			
+			private function widget_creationCompleteHandler():void
+			{
+				popUp = PopUpManager.createPopUp(this, AQI_Readings_PopUp) as AQI_Readings_PopUp;
+				popUp["stationList"].addEventListener(IndexChangeEvent.CHANGE, popUp_changeHandler);
+				popUp.addEventListener(CloseEvent.CLOSE, popUp_closeHandler);
+			}
+			
+			private function popUp_changeHandler(event:IndexChangeEvent):void
+			{
+				popUp.AQI_data.text = "";
+				
+				aqi_httpService();
+				pollutant_httpService();
+			}
+			
+			private function aqi_httpService():void
+			{
+				aqiService.url = "http://www.geospatialweb.ca/rest/api/aqo/AQI_current.php?stationId=" + popUp.stationList.selectedItem.Stn_ID;
+				aqiService.method = "GET";
+				aqiService.resultFormat = "e4x";
+				aqiService.addEventListener("result", aqiService_resultHandler);
+				aqiService.addEventListener("fault", fault);
+				aqiService.send();
+			}
+			
+			private function pollutant_httpService():void
+			{
+				pollutantService.url = "http://www.geospatialweb.ca/rest/api/aqo/AQI_pollutant.php";
+				pollutantService.method = "GET";
+				pollutantService.resultFormat = "e4x";
+				pollutantService.addEventListener("result", pollutantService_resultHandler);
+				pollutantService.addEventListener("fault", fault);
+				pollutantService.send();
+			}
+			
+			private function fault(event:FaultEvent):void
+			{
+				var fault:String = event.message.toString();
+				
+				Alert.show(fault);
+			}
+			
+			private function aqiService_resultHandler(event:ResultEvent):void
+			{
+				var aqi:String = event.result.toString();
+				aqi = aqi.slice(aqi.indexOf("<p>"), aqi.indexOf("<h3>"));
+				aqi = aqi.replace("<p>", "<body><p>").replace('<div class="row">', "</body>");
+				
+				displayAQI(new XML(aqi));
+				addMarker();
+			}
+			
+			private function displayAQI(aqi:XML):void
+			{
+				popUp.AQI_data.text = parseAQI(aqi);
+				
+				if (popUp.AQI_data.text == "NA")
+				{
+					popUp.AQI_data.setStyle("color", "0x000000");
+				}
+				else if (parseFloat(popUp.AQI_data.text) <= 15)
+				{
+					popUp.AQI_data.setStyle("color", "0xAA00FF");
+				}
+				else if ((parseFloat(popUp.AQI_data.text) >= 16) && (parseFloat(popUp.AQI_data.text) <= 31))
+				{
+					popUp.AQI_data.setStyle("color", "0x0000CC");
+				}
+				else if ((parseFloat(popUp.AQI_data.text) >= 32) && (parseFloat(popUp.AQI_data.text) <= 49))
+				{
+					popUp.AQI_data.setStyle("color", "0x0FFAA00");
+				}
+				else if ((parseFloat(popUp.AQI_data.text) >= 50) && (parseFloat(popUp.AQI_data.text) <= 99))
+				{
+					popUp.AQI_data.setStyle("color", "0xFF7700");
+				}
+				else
+				{
+					popUp.AQI_data.setStyle("color", "0xFF0000");
+				}				
+			}
+			
+			private function parseAQI(aqi:XML):String
+			{
+				var reading:String = aqi.p[2].toString();
+				reading = new XML(reading.replace(reading.substring(reading.indexOf("<strong>"), reading.indexOf("</strong>") + 9), "")).toString().replace(": ", ""); 
+				
+				if (reading == "0")
+				{
+					return "NA";
+				}
+				else
+				{
+					return reading;
+				}
+			}
+			
+			private function pollutantService_resultHandler(event:ResultEvent):void
+			{
+				var pollutant:String = event.result.toString();
+				pollutant = pollutant.slice(pollutant.indexOf("<h3>"), pollutant.indexOf("</table>") + 8);
+				pollutant = pollutant.replace("<h3>", "<body><h3>").replace("</table>", "</table></body>");
+				
+				displayPollutant(new XML(pollutant));
+			}
+			
+			private function displayPollutant(pollutant:XML):void
+			{
+				popUp.O3.visible = true;
+				popUp.FPM.visible = true;
+				popUp.NO2.visible = true;
+				popUp.dateTime.text = pollutant.h3[0].toString().replace("Air Pollutant 1-Hour Concentrations For ", "");
+				popUp.O3_data.text = parsePollutant(pollutant, parseFloat(popUp.stationList.selectedItem.Stn_Index), 1);
+				popUp.FPM_data.text = parsePollutant(pollutant, parseFloat(popUp.stationList.selectedItem.Stn_Index), 2);
+				
+				if ((popUp.stationList.selectedItem.Stn_ID == "49010") || (popUp.stationList.selectedItem.Stn_ID == "56010") || (popUp.stationList.selectedItem.Stn_ID == "51010") || (popUp.stationList.selectedItem.Stn_ID == "16015") || (popUp.stationList.selectedItem.Stn_ID == "77219"))
+				{
+					popUp.NO2_data.text = "NA";
+				}
+				else
+				{
+					popUp.NO2_data.text = parsePollutant(pollutant, parseFloat(popUp.stationList.selectedItem.Stn_Index), 3);
+				}
+			}
+			
+			private function parsePollutant(pollutant:XML, i:Number, j:Number):String
+			{
+				var reading:String = pollutant.table.tr[i].td[j].div[0].toString();
+				
+				if (reading == "N/A")
+				{
+					return "NA";
+				}
+				else
+				{
+					return reading;
+				}
+			}
+			
+			private function addMarker():void
+			{
+				var xy:MapPoint = new WebMercatorMapPoint(popUp.stationList.selectedItem.Stn_Lng, popUp.stationList.selectedItem.Stn_Lat);
+				
+				var symbolRed:SimpleMarkerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 27, 0xFF0000);
+				var symbolWhite:SimpleMarkerSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 20, 0xFFFFFF);
+				var symbolText:TextSymbol = new TextSymbol(popUp.AQI_data.text, null, 0x000000);
+				var symbolArray:Array = [symbolRed, symbolWhite, symbolText];
+				var compSymbol:CompositeSymbol = new CompositeSymbol(symbolArray);
+				
+				var attrib:Object = new Object();
+				attrib.station = popUp.stationList.selectedItem.Stn_Name;
+				attrib.stationID = popUp.stationList.selectedItem.Stn_ID;
+				
+				var markerMin:Graphic = new Graphic(xy, compSymbol, attrib);
+				markerMin.addEventListener(MouseEvent.ROLL_OVER, mouse_rollOverHandler);
+				markerMin.addEventListener(MouseEvent.ROLL_OUT, mouse_rollOutHandler);
+//				markerMin.addEventListener(MouseEvent.CLICK, mouse_clickHandler);
+				
+				parentApplication.glll.add(markerMin);
+			}
+			
+			private function mouse_rollOverHandler(event:MouseEvent):void
+			{
+				graphic = event.currentTarget as Graphic;
+				
+				var mapPoint:MapPoint = graphic.geometry as MapPoint;
+				var latlng:MapPoint = WebMercatorUtil.webMercatorToGeographic(mapPoint) as MapPoint;
+				var point:Point = parentApplication.map.toScreen(mapPoint);
+				point.y -= 5;
+				
+				parentApplication.map.infoWindow.show(parentApplication.map.toMap(point));
+				parentApplication.content.lat = latlng.y.toFixed(6);
+				parentApplication.content.lng = latlng.x.toFixed(6);
+				parentApplication.content.station = graphic.attributes.station;
+			}
+			
+			private function mouse_rollOutHandler(event:MouseEvent):void
+			{
+				parentApplication.map.infoWindow.hide();
+			}
+			
+			private function popUp_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(popUp);
+				popUp["stationList"].removeEventListener(IndexChangeEvent.CHANGE, popUp_changeHandler);
+				popUp.removeEventListener(CloseEvent.CLOSE, popUp_closeHandler);
+				
+				aqiService.removeEventListener("result", aqiService_resultHandler);
+				aqiService.removeEventListener("fault", fault);
+				
+				pollutantService.removeEventListener("result", pollutantService_resultHandler);
+				pollutantService.removeEventListener("fault", fault);
+				
+				parentApplication.tbb.selectedIndex = "-1";
+				parentApplication.ml.url = "";
+				parentApplication.glll.clear();
+			}
+		]]>
+	</fx:Script>
+
+</mx:Module>

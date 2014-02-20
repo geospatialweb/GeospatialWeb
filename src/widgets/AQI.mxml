@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   creationComplete="widget_creationCompleteHandler()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.utils.WebMercatorUtil;
+			
+			import components.AQI_PopUp;
+			import components.SQLFeature;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			private var graphic:Array = [];
+			private var popUp:AQI_PopUp;
+			
+			private var stations:ArrayCollection = new ArrayCollection
+				([
+					{station:"Barrie", stationID:"47045", shape:"POINT (-79.702306 44.382361)"},
+					{station:"Belleville", stationID:"54012", shape:"POINT (-77.3955 44.150528)"},
+					{station:"Brampton", stationID:"46089", shape:"POINT (-79.780917 43.69875)"},
+					{station:"Brantford", stationID:"21005", shape:"POINT (-80.292639 43.138611)"},
+					{station:"Burlington", stationID:"44008", shape:"POINT (-79.802639 43.315111)"},
+					{station:"Chatham", stationID:"13001", shape:"POINT (-82.208306 42.403694)"},
+					{station:"Cornwall", stationID:"56051", shape:"POINT (-74.735222 45.017972)"},
+					{station:"Dorset", stationID:"49010", shape:"POINT (-78.932944 45.224278)"},
+					{station:"Grand Bend", stationID:"15020", shape:"POINT (-81.742889 43.333083)"},
+					{station:"Guelph", stationID:"28028", shape:"POINT (-80.264167 43.551611)"},
+					{station:"Hamilton Downtown", stationID:"29000", shape:"POINT (-79.861667 43.257778)"},
+					{station:"Hamilton Mountain", stationID:"29114", shape:"POINT (-79.862778 43.229417)"},
+					{station:"Hamilton West", stationID:"29118", shape:"POINT (-79.90775 43.257444)"},
+					{station:"Kingston", stationID:"52022", shape:"POINT (-76.528306 44.21625)"},
+					{station:"Kitchener", stationID:"26060", shape:"POINT (-80.503806 43.443833)"},
+					{station:"London", stationID:"15025", shape:"POINT (-81.206417 43.006722)"},
+					{station:"Mississauga", stationID:"46108", shape:"POINT (-79.65869 43.54697)"},
+					{station:"Morrisburg", stationID:"56010", shape:"POINT (-75.189944 44.89975)"},
+					{station:"Newmarket", stationID:"48006", shape:"POINT (-79.48325 44.044306)"},
+					{station:"North Bay", stationID:"75010", shape:"POINT (-79.449278 46.323194)"},
+					{station:"Oakville", stationID:"44017", shape:"POINT (-79.702278 43.486917)"},
+					{station:"Oshawa", stationID:"45026", shape:"POINT (-78.894917 43.945944)"},
+					{station:"Ottawa Central", stationID:"51002", shape:"POINT (-75.714194 45.382528)"},
+					{station:"Ottawa Downtown", stationID:"51001", shape:"POINT (-75.676 45.434333)"},
+					{station:"Parry Sound", stationID:"49005", shape:"POINT (-80.038167 45.337861)"},
+					{station:"Petawawa", stationID:"51010", shape:"POINT (-77.441194 45.996722)"},
+					{station:"Peterborough", stationID:"59006", shape:"POINT (-78.346222 44.301917)"},
+					{station:"Port Stanley", stationID:"16015", shape:"POINT (-81.162889 42.672083)"},
+					{station:"Sarnia", stationID:"14064", shape:"POINT (-82.405083 42.982278)"},
+					{station:"Sault Ste Marie", stationID:"71078", shape:"POINT (-84.309917 46.533194)"},
+					{station:"St Catharines", stationID:"27067", shape:"POINT (-79.23475 43.160056)"},
+					{station:"Sudbury", stationID:"77219", shape:"POINT (-80.962944 46.475694)"},
+					{station:"Thunder Bay", stationID:"63203", shape:"POINT (-89.290167 48.379389)"},
+					{station:"Tiverton", stationID:"18007", shape:"POINT (-81.549722 44.314472)"},
+					{station:"Toronto Downtown", stationID:"31103", shape:"POINT (-79.388111 43.662972)"},
+					{station:"Toronto East", stationID:"33003", shape:"POINT (-79.274056 43.747917)"},
+					{station:"Toronto North", stationID:"34020", shape:"POINT (-79.417722 43.781611)"},
+					{station:"Toronto West", stationID:"35125", shape:"POINT (-79.5435 43.709444)"},
+					{station:"Windsor Downtown", stationID:"12008", shape:"POINT (-83.043667 42.315778)"},
+					{station:"Windsor West", stationID:"12016", shape:"POINT (-83.073139 42.292889)"}
+				]);
+			
+			private function widget_creationCompleteHandler():void
+			{
+				parentApplication.gl.clear();
+				parentApplication.map.centerAt(new WebMercatorMapPoint(-80.8, 44.8));
+				parentApplication.map.level = 6;
+				
+				popUp = PopUpManager.createPopUp(this, AQI_PopUp) as AQI_PopUp;
+				popUp["submit"].addEventListener(MouseEvent.CLICK, popUp_submit_clickHandler);
+				popUp["clear"].addEventListener(MouseEvent.CLICK, popUp_clear_clickHandler);
+				popUp.addEventListener(Event.CLOSE, popUp_closeHandler);
+
+				getSQLFeatures();
+			}
+			
+			private function popUp_submit_clickHandler(event:MouseEvent):void
+			{
+				getSQLFeatures();
+			}
+			
+			private function getSQLFeatures():void
+			{
+				graphic = SQLFeature.getGraphic(stations, true);
+				
+				for (var i:int=0; i < graphic.length; i++)
+				{
+					graphic[i].symbol.color = "0x009900";
+					graphic[i].addEventListener(MouseEvent.ROLL_OVER, mouse_rollOverHandler);
+					graphic[i].addEventListener(MouseEvent.ROLL_OUT, mouse_rollOutHandler);
+					
+					parentApplication.gl.add(graphic[i]);
+				}
+				
+				parentApplication.map.addLayer(parentApplication.kmlLayer, 3);
+			}
+			
+			private function mouse_rollOverHandler(event:MouseEvent):void
+			{
+				var marker:Graphic = event.currentTarget as Graphic;
+				var mapPoint:MapPoint = marker.geometry as MapPoint;
+				var latlng:MapPoint = WebMercatorUtil.webMercatorToGeographic(mapPoint) as MapPoint;
+				var point:Point = parentApplication.map.toScreen(mapPoint);
+				point.y -= 5;
+				
+				parentApplication.map.infoWindow.show(parentApplication.map.toMap(point));
+				parentApplication.content.station = marker.attributes.station;
+				parentApplication.content.lat = latlng.y.toFixed(6);
+				parentApplication.content.lng = latlng.x.toFixed(6);
+			}
+			
+			private function mouse_rollOutHandler(event:MouseEvent):void
+			{
+				parentApplication.map.infoWindow.hide();
+			}
+			
+			private function popUp_clear_clickHandler(event:MouseEvent):void
+			{
+				parentApplication.gl.clear();
+				parentApplication.gll.clear();
+				parentApplication.map.removeLayer(parentApplication.kmlLayer);
+			}
+			
+			private function popUp_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(popUp);
+				popUp["submit"].removeEventListener(MouseEvent.CLICK, popUp_submit_clickHandler);
+				popUp["clear"].removeEventListener(MouseEvent.CLICK, popUp_clear_clickHandler);
+				popUp.removeEventListener(Event.CLOSE, popUp_closeHandler);
+				
+				for (var i:int=0; i < graphic.length; i++)
+				{
+					graphic[i].removeEventListener(MouseEvent.ROLL_OVER, mouse_rollOverHandler);
+					graphic[i].removeEventListener(MouseEvent.ROLL_OUT, mouse_rollOutHandler);
+				}
+				
+				parentApplication.gl.clear();
+				parentApplication.map.removeLayer(parentApplication.kmlLayer);
+				parentApplication.tbb.selectedIndex = "-1";
+				parentApplication.ml.url = "";
+			}
+		]]>
+	</fx:Script>
+	
+</mx:Module>

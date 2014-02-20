@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="650" y="90" width="300" height="300"
+			   title="Air Quality Ontario: Current Readings"
+			   close="widget_closeHandler()"
+			   creationComplete="widget_creationCompleteHandler()"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<!--fx:Declarations>
+		<s:RemoteObject id="ro" source="StationList" result="ro_resultHandler(event)" fault="faultHandler(event)"
+				destination="zend" endpoint="http://www.geospatialweb.ca/amf/gateway.php">
+		</s:RemoteObject>
+	</fx:Declarations-->
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.utils.JSONUtil;
+			
+			import components.AQI_Readings_Graph_PopUp;
+			
+			import flash.media.Sound;
+			import flash.net.URLRequest;
+			
+			import flashx.textLayout.conversion.TextConverter;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			[Bindable]
+			private var stations:ArrayCollection = new ArrayCollection();
+			
+			private var stationData:HTTPService = new HTTPService();
+			
+			private const tf:String = TextConverter.importToFlow("&#956;", TextConverter.TEXT_FIELD_HTML_FORMAT).mxmlChildren[0].mxmlChildren[0].text;
+			
+			private function widget_creationCompleteHandler():void
+			{
+//				ro.getStations();				
+				
+				stationData.url = "http://www.geospatialweb.ca/rest/api/aqo/getStationData.php";
+				stationData.method = "GET";
+				stationData.resultFormat = "text";
+				stationData.addEventListener("result", stationData_resultHandler);
+				stationData.addEventListener("fault", faultHandler);
+				stationData.send();
+			}
+
+			private function ro_resultHandler(event:ResultEvent):void
+			{
+				stations = new ArrayCollection(event.result as Array);
+			}		
+			
+			private function stationData_resultHandler(event:ResultEvent):void
+			{
+				var featureCollection:Object = JSONUtil.decode(event.result as String);
+				
+				for (var i:int = 0; i < featureCollection.features.length; i++)
+				{
+					var attributes:Object = {};
+					
+					attributes.Stn_ID = featureCollection.features[i].properties.stnID;
+					attributes.Stn_Index = featureCollection.features[i].properties.stnIndex;
+					attributes.Stn_Name = featureCollection.features[i].properties.stnName;
+					attributes.Stn_Lng = featureCollection.features[i].geometry.coordinates[0];
+					attributes.Stn_Lat = featureCollection.features[i].geometry.coordinates[1];
+					
+					stations.addItem(attributes);
+				}
+			}
+			
+			private function faultHandler(event:FaultEvent):void
+			{
+				var fault:String = event.message.toString();
+				Alert.show(fault);
+			}
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function stations_changeHandler():void
+			{
+				sonifyData.enabled = false;
+				parentApplication.stations.Stn_ID = stationList.selectedItem.Stn_ID;
+				parentApplication.stations.Stn_Name = stationList.selectedItem.Stn_Name;
+			}
+			
+			private function graphData_clickHandler():void
+			{
+				if (stationList.selectedIndex == -1)
+				{
+					Alert.show("Please Select a Station", "Alert");
+				}
+				else
+				{
+					sonifyData.enabled = true;
+					var graph:AQI_Readings_Graph_PopUp = PopUpManager.createPopUp(this, AQI_Readings_Graph_PopUp) as AQI_Readings_Graph_PopUp;
+				}
+			}
+			
+			private function sonifyData_clickHandler():void
+			{
+				if (stationList.selectedIndex != -1)
+				{
+					var sound:Sound = new Sound(new URLRequest("assets/sounds/" + stationList.selectedItem.Stn_Name.replace(/ /g, "") + ".mp3"));
+					
+					sound.play();
+				}
+			}
+			
+			private function widget_closeHandler():void
+			{
+				stationData.removeEventListener("result", stationData_resultHandler);
+				stationData.removeEventListener("fault", stationData_faultHandler);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:DropDownList id="stationList"
+					change="stations_changeHandler()"
+					dataProvider="{stations}"
+					horizontalCenter="0"
+					labelField="Stn_Name"
+					prompt="Select Station"
+					textAlign="center"
+					width="150" top="15" />
+	<s:Label id="dateTime"
+			 color="0x00AA00"
+			 fontWeight="bold"
+			 textAlign="center"
+			 width="100%" y="50" />
+	
+	<mx:Form horizontalCenter="0"
+			 indicatorGap="0"
+			 y="70">
+		<mx:FormItem label="Air Quality Index:"
+					 width="190">
+			<s:Label id="AQI_data"
+					 fontWeight="bold"
+					 textAlign="right"
+					 width="22" />
+		</mx:FormItem>
+		<mx:FormItem label="Ground-Level Ozone:" width="190">
+			<s:HGroup>
+				<s:Label id="O3_data"
+						 textAlign="right"
+						 width="22" />
+				<s:Label id="O3"
+						 text="ppb"
+						 visible="false"
+						 x="208" y="103" />
+			</s:HGroup>
+		</mx:FormItem>
+		<mx:FormItem label="Fine Particulate Matter:"
+					 width="190">
+			<s:HGroup>
+				<s:Label id="FPM_data"
+						 textAlign="right"
+						 width="22" />
+				<s:RichText id="FPM"
+							visible="false"
+							x="208" y="130">
+					<s:span>{tf}g/m</s:span><s:span baselineShift="superscript">3</s:span>
+				</s:RichText>
+			</s:HGroup>
+		</mx:FormItem>
+		<mx:FormItem label="Nitrogen Dioxide:"
+					 width="190">
+			<s:HGroup>
+				<s:Label id="NO2_data"
+						 textAlign="right"
+						 width="22" />
+				<s:Label id="NO2"
+						 text="ppb"
+						 visible="false"
+						 x="208" y="157" />
+			</s:HGroup>
+		</mx:FormItem>
+	</mx:Form>
+	
+	<s:controlBarContent>
+		<s:HGroup width="100%" horizontalAlign="center">
+			<s:Button id="graphData"
+					  label="Graph Data"
+					  click="graphData_clickHandler()" />
+			<s:Button id="sonifyData"
+					  label="Sonify Data"
+					  enabled="false"
+					  click="sonifyData_clickHandler()" />
+		</s:HGroup>
+	</s:controlBarContent>
+
+</s:TitleWindow>

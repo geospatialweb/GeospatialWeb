@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   creationComplete="widget_creationCompleteHandler()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.SpatialReference;
+			import com.esri.ags.events.MapMouseEvent;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.Polyline;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.symbols.SimpleLineSymbol;
+			import com.esri.ags.utils.WebMercatorUtil;
+			
+			import components.AQI_IDW_Graph_PopUp;
+			import components.Google_Elevation_PopUp;
+			import components.Surface_Vector_PopUp;
+			import components.Surface_Vector_Scanner_PopUp;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			private var array:Array = [38.63168,38.59526,38.52087,38.42208,38.3114,38.19899,38.09223,37.99602,37.91327,37.84555,37.79363,37.87989,37.87307,37.88189,37.90614,37.94555,37.99972,38.06805,38.14953,38.24257,38.34487,38.57677,38.84612,38.9432,39.0344,39.11629,39.1866,39.24479,39.29225,39.33216,39.36887,39.407,39.4507,39.50314,39.60521,39.68061,39.76753,39.86583,39.97539,40.23626,40.37431,40.52495,40.69,40.87194,41.07397,41.29996,41.55439,41.84214,42.168,42.53581,42.94723,43.39974,43.88441,44.3836,44.87006,45.30853,45.66114,45.89573,45.99424,45.95715];
+			private var elevation:HTTPService = new HTTPService();
+			private var popUp:Surface_Vector_PopUp;
+			
+			private function widget_creationCompleteHandler():void
+			{
+				parentApplication.gll.clear();
+				parentApplication.glll.clear();
+				parentApplication.map.level = 8;
+				parentApplication.map.centerAt(new WebMercatorMapPoint(-79.06, 44.03));
+				parentApplication.map.doubleClickZoomEnabled = false;
+				parentApplication.map.addEventListener(MapMouseEvent.MAP_CLICK, map_clickHandler);
+				
+				popUp = PopUpManager.createPopUp(this, Surface_Vector_PopUp) as Surface_Vector_PopUp;
+				popUp["aqi"].addEventListener(MouseEvent.CLICK, popUp_aqi_clickHandler);
+				popUp["dem"].addEventListener(MouseEvent.CLICK, popUp_dem_clickHandler);
+				popUp["scan"].addEventListener(MouseEvent.CLICK, popUp_scan_clickHandler);
+				popUp.addEventListener(CloseEvent.CLOSE, popUp_closeHandler);
+			}
+			
+			private function map_clickHandler(event:MapMouseEvent):void
+			{
+				var latlng:MapPoint = WebMercatorUtil.webMercatorToGeographic(event.mapPoint) as MapPoint;
+				parentApplication.demString = parentApplication.demString + latlng.y + "," + latlng.x + "|";
+				
+				var xy:MapPoint = event.mapPoint as MapPoint;
+				parentApplication.demArray.push(xy);
+				
+				if (parentApplication.demArray.length > 1)
+				{
+					addLine(new Polyline([parentApplication.demArray], new SpatialReference(3857)));
+				}
+			}
+			
+			private function addLine(geometry:Polyline):void
+			{
+				parentApplication.gll.add(new Graphic(geometry, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, 0x005500, 0.75 , 2)));
+			}
+			
+			private function popUp_scan_clickHandler(event:MouseEvent):void
+			{
+				parentApplication.scan ="<chart numVDivLines='9' yAxisMaxValue='0' alternateHGridAlpha='0' bgSWFAlpha='0' canvasBorderAlpha='0' borderAlpha='0' canvasBgAlpha='0' bgAlpha='0,0' showValues='0' lineThickness='1' drawAnchors='0' lineColor='008800' showYAxisValues='0' chartTopMargin='5' chartLeftMargin='12'><set value='0' /><set value='1' /></chart>";
+				
+				var gridScan:Surface_Vector_Scanner_PopUp = PopUpManager.createPopUp(this, Surface_Vector_Scanner_PopUp) as Surface_Vector_Scanner_PopUp;
+			}
+			
+			private function popUp_aqi_clickHandler(event:MouseEvent):void
+			{
+				var aqi:String = "<chart yAxisNamePadding='0' setAdaptiveYMin='1' plotFillColor='000088' showLabels='0' showValues='0' drawAnchors='0' lineColor='008800' plotBorderThickness='2' chartTopMargin='32' chartLeftMargin='5'>";
+				
+				for (var i:int=0; i<array.length-1; i++)
+				{
+					aqi = aqi + "<set value='" + array[i] + "' />"
+				}
+				
+				aqi = aqi + "</chart>";
+				
+				parentApplication.aqi = aqi;
+				parentApplication.aqi_popUp = PopUpManager.createPopUp(this, AQI_IDW_Graph_PopUp) as AQI_IDW_Graph_PopUp;
+			}
+			
+			private function popUp_dem_clickHandler(event:MouseEvent):void
+			{
+				if (parentApplication.demArray.length > 1)
+				{
+					elevation.url = "http://www.geospatialweb.ca/rest/api/google/elevation.php?path=" + parentApplication.demString.substring(0, parentApplication.demString.length - 1);
+					elevation.method = "GET";
+					elevation.resultFormat = "e4x";
+					elevation.addEventListener("result", elevation_resultHandler);
+					elevation.addEventListener("fault", fault);
+					elevation.send();
+				}
+				else
+				{
+					Alert.show("Please create a linepath comprising 2 endpoints");
+				}
+			}
+			
+			private function elevation_resultHandler(event:ResultEvent):void
+			{
+				var result:XML = new XML(event.result.toString());
+				var dem:String = "<chart yAxisName='Metres' yAxisNamePadding='0' setAdaptiveYMin='1' plotFillColor='008800' showLabels='0' showValues='0' drawAnchors='0' lineColor='CC0000' plotBorderThickness='2' chartTopMargin='32' chartLeftMargin='5'>";
+				
+				for (var i:int=0; i<result.children().length()-1; i++)
+				{
+					dem = dem + "<set value='" + parseFloat(result..elevation[i].toString()).toFixed(0) + "' />"
+				}
+				
+				dem = dem + "</chart>";
+				
+				parentApplication.dem = dem;
+				parentApplication.dem_popUp = PopUpManager.createPopUp(this, Google_Elevation_PopUp) as Google_Elevation_PopUp;
+			}
+			
+			private function fault(event:FaultEvent):void
+			{
+				var fault:String = event.message.toString();
+				
+				Alert.show(fault);
+			}
+			
+			private function popUp_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(popUp);
+				popUp["aqi"].removeEventListener(MouseEvent.CLICK, popUp_aqi_clickHandler);
+				popUp["dem"].removeEventListener(MouseEvent.CLICK, popUp_dem_clickHandler);
+				popUp["scan"].removeEventListener(MouseEvent.CLICK, popUp_scan_clickHandler);
+				popUp.removeEventListener(CloseEvent.CLOSE, popUp_closeHandler);
+				
+				elevation.removeEventListener("result", elevation_resultHandler);
+				elevation.removeEventListener("fault", fault);
+				
+				parentApplication.map.removeEventListener(MapMouseEvent.MAP_CLICK, map_clickHandler);
+				parentApplication.map.doubleClickZoomEnabled = true;
+				parentApplication.tbb.selectedIndex = "-1";
+				parentApplication.gll.clear();
+				parentApplication.ml.url = "";
+			}
+		]]>
+	</fx:Script>
+
+</mx:Module>

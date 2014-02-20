@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:fc="com.fusioncharts.components.*"
+			   x="60" y="60" width="482" height="427"
+			   title="Ontario Air Quality Index (AQI) - June 1/10 to June 30/10:  {parentApplication.stations.Stn_Name}"
+			   close="widget_closeHandler()"
+			   creationComplete="widget_creationCompleteHandler()"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.utils.JSONUtil;
+			
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private var service:HTTPService = new HTTPService();
+			private var dataXML:String = "";
+			private var hasRendered:Boolean;
+			
+			private function widget_creationCompleteHandler():void
+			{
+				service.url = "http://www.geospatialweb.ca/rest/api/aqo/AQI_chart.php?stationId=" + parentApplication.stations.Stn_ID;
+//				service.url = "http://www.geospatialweb.ca/rest/api/aqo/AQI_sonify.php?stationId=" + parentApplication.stations.Stn_ID;
+				service.method = "GET";
+				service.resultFormat = "xml";
+//				service.resultFormat = "text";
+				service.addEventListener("fault", service_faultHandler);
+				service.addEventListener("result", service_resultHandler);
+				service.send();
+			}
+			
+			private function service_faultHandler(event:FaultEvent):void
+			{
+				var fault:String = event.message.toString();
+				
+				Alert.show(fault);
+			}
+			
+			private function service_resultHandler(event:ResultEvent):void
+			{
+//				var data:Object = JSONUtil.decode(event.result as String);
+//				var array:Array = data as Array;
+//				var sonic:String = array.join(",");
+				
+				dataXML = event.result.toString();
+				setData();
+			}
+			
+			private function onRender():void
+			{
+				hasRendered = true;
+				setData();
+			}
+			
+			private function setData():void
+			{
+				if (hasRendered)
+					fc.FCSetDataXML(dataXML);
+			}
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function widget_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+				service.removeEventListener("result", service_resultHandler);
+				service.removeEventListener("fault", service_faultHandler);
+			}
+		]]>
+	</fx:Script>
+	
+	<fc:FusionCharts id="fc"
+					 FCChartType="Line"
+					 FCRenderEvent="{onRender()}"
+					 x="0" y="0"
+					 width="480" height="394">
+		<fc:FCChartData ChartNoDataText=" " />
+	</fc:FusionCharts>
+
+</s:TitleWindow>

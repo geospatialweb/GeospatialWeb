@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:esri="http://www.esri.com/2008/ags"
+			   xmlns:comp="components.*"
+			   creationComplete="creationCompleteHandler()"
+			   width="960" height="900">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.layers.ArcGISTiledMapServiceLayer;
+			import com.esri.ags.layers.GraphicsLayer;
+			import com.esri.ags.layers.KMLLayer;
+			import com.esri.ags.layers.WebTiledLayer;
+			import com.esri.ags.utils.WebMercatorUtil;
+			
+			import components.AQI_IDW_Graph_PopUp;
+			import components.Google_Elevation_PopUp;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.ItemClickEvent;
+			
+			public var aqi:String;
+			public var aqi_popUp:AQI_IDW_Graph_PopUp;
+			public var dem:String;
+			public var demArray:Array = [];
+			public var demString:String;
+			public var dem_popUp:Google_Elevation_PopUp;
+			public var gl:GraphicsLayer = new GraphicsLayer();
+			public var gll:GraphicsLayer = new GraphicsLayer();
+			public var glll:GraphicsLayer = new GraphicsLayer();
+			public var kmlLayer:KMLLayer = new KMLLayer("http://www.geospatialweb.ca/kml/idw.kmz");
+			public var scan:String;
+			public var stations:Object = {};
+			
+			[Bindable]
+			private var baseMaps:ArrayCollection = new ArrayCollection();
+			
+			private function creationCompleteHandler():void
+			{
+				addBasemaps();
+				
+				map.level = 6;
+				map.addLayer(gl);
+				map.addLayer(gll);
+				map.addLayer(glll);
+				map.centerAt(new WebMercatorMapPoint(-80.8, 44.8));
+				map.addEventListener(MouseEvent.MOUSE_MOVE, map_mouseMoveHandler);
+				map.infoWindow.labelVisible = false;
+				map.infoWindow.closeButtonVisible = false;
+				
+				gl.spatialReference = map.spatialReference;
+				gll.spatialReference = map.spatialReference;
+				glll.spatialReference = map.spatialReference;
+				
+				ml.url = "widgets/AQI.swf";
+			}
+			
+			private function addBasemaps():void
+			{
+				var mapBox_Dark:WebTiledLayer = new WebTiledLayer("http://{subDomain}.tiles.mapbox.com/v3/examples.map-cnkhv76j/{level}/{col}/{row}.png");
+				mapBox_Dark.name = "Black";
+				mapBox_Dark.subDomains = [ "a", "b", "c", "d" ];
+				mapBox_Dark.visible = true;
+				
+				map.addLayer(mapBox_Dark);
+				baseMaps.addItem(mapBox_Dark.name);
+				
+				var esri_Topo:ArcGISTiledMapServiceLayer = new ArcGISTiledMapServiceLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer");
+				esri_Topo.attributionVisible = false;
+				esri_Topo.name = "Topo";
+				esri_Topo.visible = false;
+				
+				map.addLayer(esri_Topo);
+				baseMaps.addItem(esri_Topo.name);
+				
+				var esri_Aerial:ArcGISTiledMapServiceLayer = new ArcGISTiledMapServiceLayer("http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer");
+				esri_Aerial.attributionVisible = false;
+				esri_Aerial.name = "Aerial";
+				esri_Aerial.visible = false;
+				
+				map.addLayer(esri_Aerial);				
+				baseMaps.addItem(esri_Aerial.name);
+			}
+			
+			private function map_mouseMoveHandler(event:MouseEvent):void
+			{
+				const mapPoint:MapPoint = map.toMapFromStage(event.stageX, event.stageY);
+				const latlong:MapPoint = WebMercatorUtil.webMercatorToGeographic(mapPoint) as MapPoint;
+				
+				degrees.text = "Lng/Lat: " + latlong.x.toFixed(7) + "  " + latlong.y.toFixed(7);
+				metres.text = "X,Y Metres: " + mapPoint.x.toFixed(0) + "  " + mapPoint.y.toFixed(0);
+			}
+			
+			public function bb_changeHandler():void
+			{
+				for (var i:int = 0; i < baseMaps.length; i++)
+				{
+					if (map.layers[i].name == bb.selectedItem)
+					{
+						map.layers[i].visible = true;
+					}
+					else
+					{
+						map.layers[i].visible = false;
+					}
+				}
+			}
+			
+			private function tbb_itemClickHandler(event:ItemClickEvent):void
+			{
+				switch (event.item.label)
+				{
+					case "aqi":
+					{
+						ml.url = "widgets/AQI.swf";
+						break;
+					}
+					
+					case "aqo":
+					{
+						ml.url = "widgets/AQI_Readings.swf";
+						break;
+					}
+					case "diagnostic":
+					{
+						ml.url = "widgets/Surface_Vector.swf";
+						break;
+					}
+						
+					case "pdf":
+					{
+						ml.url = "widgets/Export_to_PDF.swf";
+						break;
+					}
+				}
+			}
+			
+			private function reset_clickhandler():void
+			{
+				map.level = 6;
+				map.centerAt(new WebMercatorMapPoint(-80.8, 44.8));
+				map.removeLayer(kmlLayer);
+				
+				bb.selectedIndex = 0;
+				tbb.selectedIndex = 0;
+				bb_changeHandler();
+				
+				gl.clear();
+				gll.clear();
+				glll.clear();
+				
+				ml.url = "widgets/AQI.swf";
+			}
+		]]>
+	</fx:Script>
+	
+	<esri:Map id="map"
+			  logoVisible="false"
+			  openHandCursorVisible="false"
+			  wrapAround180="true">
+		<esri:extent>
+			<esri:Extent xmin="-10000000" ymin="5000000"
+						 xmax="-8000000" ymax="6000000">
+				<esri:SpatialReference wkid="3857" />
+			</esri:Extent>
+		</esri:extent>
+		<esri:infoWindowContent>
+			<comp:InfoWindow_RollOver id="content" />
+		</esri:infoWindowContent>
+	</esri:Map>
+	
+	<s:ButtonBar id="bb"
+				 change="bb_changeHandler()" 
+				 dataProvider="{baseMaps}"
+				 requireSelection="true"
+				 selectedIndex="0"
+				 left="650" top="10" />
+	
+	<s:Button id="reset"
+			  click="reset_clickhandler()"
+			  label="Reset"
+			  right="10" top="10" />
+	
+	<s:ModuleLoader id="ml" />
+	
+	<s:controlBarLayout>
+		<s:HorizontalLayout verticalAlign="middle" />
+	</s:controlBarLayout>
+	
+	<s:controlBarContent>
+		<s:Spacer />
+		<s:Image source="@Embed('assets/images/i-globe.png')" />
+		<s:VGroup>
+			<mx:Label text="Geospatial Web"
+					  fontSize="18"
+					  paddingTop="3" />
+			<mx:Label text="johncampbell@geospatialweb.ca"
+					  fontSize="10"
+					  paddingLeft="2" paddingTop="-12" />
+		</s:VGroup>
+		<mx:ToggleButtonBar id="tbb"
+							itemClick="tbb_itemClickHandler(event)"
+							labelField="null"
+							paddingLeft="100"
+							selectedIndex="0"
+							height="30">
+			<mx:dataProvider>
+				<fx:Object icon="@Embed(source='assets/images/home.png')"
+						   label="aqi"
+						   toolTip="Ontario Air Quality Index" />
+				<fx:Object icon="@Embed(source='assets/images/widget.png')"
+						   label="aqo"
+						   toolTip="Air Quality Ontario Readings" />
+				<fx:Object icon="@Embed(source='assets/images/service.png')"
+						   label="diagnostic"
+						   toolTip="Diagnostic Surface Vector Analysis" />
+				<fx:Object icon="@Embed(source='assets/images/tools.png')"
+						   label="pdf"
+						   toolTip="PDF Map Export" />
+			</mx:dataProvider>
+		</mx:ToggleButtonBar>
+		<s:VGroup>
+			<mx:Label id="degrees"
+					  fontSize="10"
+					  paddingLeft="185" paddingTop="4" />
+			<mx:Label id="metres"
+					  fontSize="10"
+					  paddingLeft="185" paddingTop="-11" />
+		</s:VGroup>
+	</s:controlBarContent>
+	
+</s:Application>

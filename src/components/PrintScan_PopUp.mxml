@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="325" y="395" width="500" height="405" backgroundAlpha="0"
+			   title="Extent Scanner"
+			   close="widget_closeHandler()"
+			   windowMoveEnd="widget_windowMoveEndHandler(event)"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			public function widget_windowMoveEndHandler(event:TitleWindowBoundsEvent):void
+			{
+				parentDocument.pixel_xMin = event.afterBounds.topLeft.x;
+				parentDocument.pixel_yMin = event.afterBounds.bottomRight.y;
+				parentDocument.pixel_xMax = event.afterBounds.bottomRight.x;
+				parentDocument.pixel_yMax = event.afterBounds.topLeft.y;
+			}	
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function widget_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+
+</s:TitleWindow>

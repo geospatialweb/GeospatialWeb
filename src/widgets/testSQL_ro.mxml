@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:esri="http://www.esri.com/2008/ags"
+			   minWidth="955" minHeight="600"
+			   creationComplete = "creationCompleteHandler();" >
+	
+	<fx:Declarations>
+		<s:RemoteObject id="ro" result="ro_resultHandler(event);" fault="ro_faultHandler(event);"
+				destination="zend" endpoint="http://www.geospatialweb.ca/amf/gateway.php">
+		</s:RemoteObject>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.layers.GraphicsLayer;
+
+			import com.components.SQLFeature;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var gl:GraphicsLayer = new GraphicsLayer();
+			
+			private function creationCompleteHandler():void
+			{
+				map.addLayer(gl);
+
+				ro.getSQLSpatial("SELECT CENSUS_FSA, CENX, CENY, Shape.ToString() AS Centroid FROM dbo.FSAON_CENTROIDS");
+
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS CTRLINE FROM [cc].[dbo].[RoadNetwork_ON] WHERE R_PLACENAM = 'City of Kingston' AND ROADCLASS = 'Arterial'");
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS CTRLINE FROM [cc].[dbo].[RoadNetwork_ON] WHERE R_PLACENAM = 'City of Kingston'");
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS Features FROM [cc].[dbo].[ProtectedAreas_CA] WHERE PROV_EN = 'NEW BRUNSWICK'");
+				//ro.getSQLSpatial("SELECT *, Feature.ToString() AS Centroid FROM [cc].[dbo].[FSALDU5CENTROIDS]");
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS Centroid FROM [cc].[dbo].[C2006DA_ON_CENTROIDS] WHERE CSDUID = '3510010'");
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS Feature FROM [cc].[dbo].[C2006DA_ON] WHERE CDUID IN ('3510','3511')");
+				//ro.getSQLSpatial("SELECT *, [Shape].EnvelopeCenter().ToString() AS Centroid FROM [cc].[dbo].[C2006FSA]");
+				//ro.getSQLSpatial("SELECT *, [Shape].ToString() AS Health_Unit FROM [cc].[dbo].[PublicHealthUnits_ON]");
+			}
+			
+			private function ro_resultHandler(event:ResultEvent):void
+			{
+				var boo:Boolean = true;
+				var graphic:Array = SQLFeature.getGraphic(event.result as ArrayCollection, boo);
+//				var geometry:String = SQLFeature.getGeometry();
+				
+				for (var i:int=0; i<graphic.length; i++)
+				{
+					gl.add(graphic[i]);
+					
+					if (graphic[i].attributes != null)
+						graphic[i].toolTip = graphic[i].attributes.CENSUS_FSA;
+
+						//graphic[i].toolTip = graphic[i].attributes.L_STNAME_C;
+						//graphic[i].toolTip = graphic[i].attributes.NAME_EN;
+						//graphic[i].toolTip = graphic[i].attributes.FSALDU5;
+						//graphic[i].toolTip = graphic[i].attributes.DAUID;
+						//graphic[i].toolTip = graphic[i].attributes.HRNAME;
+				}
+			}
+			
+			private function ro_faultHandler(event:FaultEvent):void
+			{
+				var faultstring:String = event.fault.faultString;
+				Alert.show(faultstring);
+			}
+		]]>
+	</fx:Script>
+	
+	<esri:Map id="map">
+		<esri:ArcGISTiledMapServiceLayer url="http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer"/>
+		<esri:extent>
+			<esri:Extent xmin="-10000000" ymin="5300000" xmax="-8000000" ymax="6100000"/>
+		</esri:extent>
+	</esri:Map>
+
+</s:Application>

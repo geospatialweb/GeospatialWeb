@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="650" y="90" width="300" height="325"
+			   title="Geocoder.ca - Locate Street Address"
+			   windowMoving="windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			[Bindable]
+			private var prov:ArrayCollection = new ArrayCollection
+				([
+					{prov:"Alberta", abbr:"AB"},
+					{prov:"British Columbia", abbr:"BC"},
+					{prov:"Manitoba", abbr:"MB"},
+					{prov:"New Brunswick", abbr:"NB"},
+					{prov:"Newfoundland / Labrador", abbr:"NL"},
+					{prov:"Northwest Territories", abbr:"NT"},
+					{prov:"Nova Scotia", abbr:"NS"},
+					{prov:"Nunavut", abbr:"NU"},
+					{prov:"Ontario", abbr:"ON"},
+					{prov:"Prince Edward Island", abbr:"PE"},
+					{prov:"Quebec", abbr:"QC"},
+					{prov:"Saskatchewan", abbr:"SK"},
+					{prov:"Yukon", abbr:"YT"}
+				]);
+			
+			private function windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 48)
+				{
+					event.afterBounds.top = 48;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function resetForm(event:MouseEvent):void
+			{
+				label.setStyle("color", 0x00AA00);
+				label.text = "Enter Street Address:";
+				street_number.text = "";
+				street_number.setFocus();
+				street_name.text = "";
+				municipality.text = "";
+				X_Geog.text = "";
+				Y_Geog.text = "";
+				X_Merc.text = "";
+				Y_Merc.text = "";
+				province.selectedIndex = -1;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Label id="label" x="10" y="15" text="Enter Street Address:" fontWeight="bold" color="0x00AA00"/>
+	<mx:Form x="0" y="25" indicatorGap="5">
+		<mx:FormItem label="Street Number:" width="265">
+			<s:TextInput id="street_number" width="165"/>
+		</mx:FormItem>
+		<mx:FormItem label="Street Name:" width="265">
+			<s:TextInput id="street_name" width="165"/>
+		</mx:FormItem>
+		<mx:FormItem label="Municipality:" width="265">
+			<s:TextInput id="municipality" width="165"/>
+		</mx:FormItem>
+		<mx:FormItem label="Province:" width="265" height="35">
+			<s:DropDownList id="province" width="165" textAlign="center" requireSelection="true" dataProvider="{prov}" labelField="prov"/>
+		</mx:FormItem>
+		<mx:FormItem label="Longitude:" width="260" height="35">
+			<s:Label id="X_Geog"/>
+			<s:Label id="X_Merc"/>
+		</mx:FormItem>
+		<mx:FormItem label="Latitude:" width="260">
+			<s:Label id="Y_Geog"/>
+			<s:Label id="Y_Merc"/>
+		</mx:FormItem>
+	</mx:Form>
+	<s:controlBarContent>
+		<s:HGroup width="100%" horizontalAlign="center">
+			<s:Button id="locate" label="Locate"/>
+			<s:Button label="Reset" click="resetForm(event)"/>
+		</s:HGroup>
+	</s:controlBarContent>
+
+</s:TitleWindow>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" backgroundColor="#000000">
+    <mx:String id="lat"></mx:String>
+    <mx:String id="lng"></mx:String>
+	<mx:String id="station"></mx:String>
+	<mx:Label text="{station}" fontWeight="bold" color="0x00CC00" />
+    <mx:Label text="Latitude: {lat}" color="0xCCCCCC" />
+    <mx:Label text="Longitude: {lng}" color="0xCCCCCC" />
+</mx:VBox>

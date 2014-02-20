@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   creationComplete="widget_creationCompleteHandler()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.events.GeoprocessorEvent;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.tasks.Geoprocessor;
+			import com.esri.ags.tasks.supportClasses.JobInfo;
+			import com.esri.ags.tasks.supportClasses.ParameterValue;
+			
+			import components.Export_to_PDF_PopUp;
+			import components.PrintScan_PopUp;
+			import components.supportClasses.FileDownloader;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			
+			public var pixel_xMin:Number = 325;
+			public var pixel_yMin:Number = 800;
+			public var pixel_xMax:Number = 825;
+			public var pixel_yMax:Number = 395;
+			
+			private var exportToPDF:Export_to_PDF_PopUp;
+			private var printScan:PrintScan_PopUp;
+			
+			private var fileDownloader:FileDownloader = new FileDownloader();
+			private var gp:Geoprocessor = new Geoprocessor("http://geospatialweb.me:8080/ArcGIS/rest/services/ERIS/ExportToPDF/GPServer/ExportToPDF");
+			
+			private function widget_creationCompleteHandler():void
+			{
+				parentApplication.bb.selectedItem = "Topo";
+				parentApplication.bb_changeHandler();
+				parentApplication.gll.clear();
+				parentApplication.map.level = 15;
+				parentApplication.map.centerAt(new WebMercatorMapPoint(-76.4965, 44.24));
+				parentApplication.map.removeLayer(parentApplication.kmlLayer);
+				
+				exportToPDF = PopUpManager.createPopUp(this, Export_to_PDF_PopUp) as Export_to_PDF_PopUp;
+				exportToPDF["submit"].addEventListener(MouseEvent.CLICK, exportToPDF_submit_clickHandler);
+				exportToPDF["download"].addEventListener(MouseEvent.CLICK, exportToPDF_download_clickHandler);
+				exportToPDF.addEventListener(MouseEvent.MOUSE_OVER, exportToPDF_mouseOverHandler);
+				exportToPDF.addEventListener(CloseEvent.CLOSE, exportToPDF_closeHandler);
+				
+				gp.addEventListener(GeoprocessorEvent.JOB_COMPLETE, gp_jobCompleteHandler);
+				gp.addEventListener(GeoprocessorEvent.STATUS_UPDATE, gp_jobStatusHandler);
+				gp.addEventListener(GeoprocessorEvent.GET_RESULT_DATA_COMPLETE, gp_getResultDataCompleteHandler);
+				gp.addEventListener(FaultEvent.FAULT, gp_faultHandler);
+				
+				printScan = PopUpManager.createPopUp(this, PrintScan_PopUp) as PrintScan_PopUp;
+			}
+			
+			private function exportToPDF_submit_clickHandler(event:MouseEvent):void
+			{
+				var extent:Object = new Object();
+				extent = setExtent();
+				
+				gp.disableClientCaching = true;
+				gp.submitJob(extent);
+				
+				exportToPDF.submit.enabled = false;
+				exportToPDF.download.enabled = false;
+				exportToPDF.swfMessage.visible = true;
+				exportToPDF.jobStatus.text = "";
+				exportToPDF.dlStatus.text = "";
+			}
+			
+			private function setExtent():Object
+			{
+				var topLeft_XY:MapPoint = parentDocument.map.toMapFromStage(pixel_xMin, pixel_yMax + 32);
+				var bottomRight_XY:MapPoint = parentDocument.map.toMapFromStage(pixel_xMax, pixel_yMin - 16);
+				
+				var extent:Object = new Object();
+				extent.xMin = (topLeft_XY.x).toFixed(0);
+				extent.yMin = (bottomRight_XY.y).toFixed(0);
+				extent.xMax = (bottomRight_XY.x).toFixed(0);
+				extent.yMax = (topLeft_XY.y).toFixed(0);
+				
+				exportToPDF.xMin.text = extent.xMin;
+				exportToPDF.yMin.text = extent.yMin;
+				exportToPDF.xMax.text = extent.xMax;
+				exportToPDF.yMax.text = extent.yMax;
+				
+				return extent;
+			}
+			
+			private function gp_jobCompleteHandler(event:GeoprocessorEvent):void
+			{
+				exportToPDF.submit.enabled = true;
+				exportToPDF.download.enabled = true;
+				exportToPDF.swfMessage.visible = false;
+				
+				if (event.jobInfo.jobStatus == "esriJobFailed")
+				{
+					exportToPDF.jobStatus.text = "Job Failed";
+					Alert.show("Job Failed");
+				}
+				else
+				{
+					exportToPDF.dlStatus.text = "PDF Ready for Download  (~1MB)";
+					gp.getResultData(event.jobInfo.jobId, "Map");
+				}
+			}
+			
+			private function gp_jobStatusHandler(event:GeoprocessorEvent):void
+			{
+				exportToPDF.jobStatus.text = event.jobInfo.jobStatus.replace("esriJob", "Job ");
+			}
+			
+			private function gp_getResultDataCompleteHandler(event:GeoprocessorEvent):void
+			{
+				fileDownloader.url = event.parameterValue.value.url;
+				fileDownloader.fileName = event.parameterValue.paramName;
+			}
+			
+			private function exportToPDF_download_clickHandler(event:MouseEvent):void
+			{
+				fileDownloader.downloadFile();
+			}
+			
+			private function exportToPDF_mouseOverHandler(event:MouseEvent):void
+			{
+				Mouse.cursor = "auto";
+			}
+			
+			private function gp_faultHandler(event:FaultEvent):void
+			{
+				var fault:String = event.fault.faultString;
+				
+				exportToPDF.submit.enabled = true;
+				exportToPDF.download.enabled = true;
+				exportToPDF.swfMessage.visible = false;
+				exportToPDF.jobStatus.text = "Job Failed";
+				
+				Alert.show(fault);
+			}
+			
+			private function exportToPDF_closeHandler(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(exportToPDF);
+				exportToPDF["submit"].removeEventListener(MouseEvent.CLICK, exportToPDF_submit_clickHandler);
+				exportToPDF["download"].removeEventListener(MouseEvent.CLICK, exportToPDF_download_clickHandler);
+				exportToPDF.removeEventListener(MouseEvent.MOUSE_OVER, exportToPDF_mouseOverHandler);
+				exportToPDF.removeEventListener(CloseEvent.CLOSE, exportToPDF_closeHandler);
+				
+				gp.removeEventListener(GeoprocessorEvent.JOB_COMPLETE, gp_jobCompleteHandler);
+				gp.removeEventListener(GeoprocessorEvent.STATUS_UPDATE, gp_jobStatusHandler);
+				gp.removeEventListener(GeoprocessorEvent.GET_RESULT_DATA_COMPLETE, gp_getResultDataCompleteHandler);
+				gp.removeEventListener(FaultEvent.FAULT, gp_faultHandler);
+				
+				parentApplication.tbb.selectedIndex = "-1";
+				parentApplication.ml.url = "";
+			}
+		]]>
+	</fx:Script>
+
+</mx:Module>

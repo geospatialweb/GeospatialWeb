@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="650" y="90" width="300" height="300"
+			   title="Map Export to PDF"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:TextArea borderVisible="false"
+				editable="false"
+				focusAlpha="0.0"
+				fontSize="13"
+				text="This widget exports a PDF document of the Extent Scanner window to the desktop. XY coordinates for map export are listed below:"
+				textAlign="justify"
+				x="25" y="15"
+				width="250" />
+	<mx:Form indicatorGap="0"
+			 x="75" y="63"
+			 width="175" >
+		<mx:FormItem label="X_Min:"
+					 width="125">
+			<s:Label id="xMin"
+					 fontWeight="bold"
+					 textAlign="right"
+					 width="75" />
+		</mx:FormItem>
+		<mx:FormItem label="Y_Min:" width="125">
+			<s:Label id="yMin"
+					 fontWeight="bold"
+					 textAlign="right"
+					 width="75" />
+		</mx:FormItem>
+		<mx:FormItem label="X_Max:" 
+					 width="125">
+			<s:Label id="xMax"
+					 fontWeight="bold"
+					 textAlign="right"
+					 width="75" />
+		</mx:FormItem>
+		<mx:FormItem label="Y_Max:" 
+					 width="125">
+			<s:Label id="yMax"
+					 fontWeight="bold"
+					 textAlign="right"
+					 width="75" />
+		</mx:FormItem>
+	</mx:Form>
+	
+	<s:Label id="jobStatus"
+			 color="0x00AAAA"
+			 horizontalCenter="0"
+			 x="110" y="185" />
+	<s:Label id="dlStatus"
+			 color="0x00AA00"
+			 horizontalCenter="0"
+			 x="90" y="205" />
+	
+	<s:controlBarContent>
+		<s:HGroup horizontalAlign="center"
+				  width="100%">
+			<s:Button id="submit"
+					  label="Submit Job" />
+			<mx:Image id="swfMessage"
+					  source="assets/images/loader.swf"
+					  visible="false" />
+			<s:Button id="download"
+					  label="Download PDF"
+					  enabled="false" />
+		</s:HGroup>
+	</s:controlBarContent>
+
+</s:TitleWindow>

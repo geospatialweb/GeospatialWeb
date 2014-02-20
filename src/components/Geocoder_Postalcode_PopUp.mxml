@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   x="685" y="90" width="265" height="250"
+			   title="Geocoder.ca - Locate Postal Code"
+			   windowMoving="windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private function windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 48)
+				{
+					event.afterBounds.top = 48;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function resetForm(event:MouseEvent):void
+			{
+				label.setStyle("color", 0x00AA00);
+				label.text = "Enter Postal Code:";
+				postal_code.text = "";
+				postal_code.setFocus();
+				X_Geog.text = "";
+				Y_Geog.text = "";
+				X_Merc.text = "";
+				Y_Merc.text = "";
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Label id="label" x="10" y="15" text="Enter Postal Code:" fontWeight="bold" color="0x00AA00"/>
+	<mx:Form x="26" y="25" indicatorGap="5">
+		<mx:FormItem label="Postal Code:">
+			<s:TextInput id="postal_code" width="60"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Form x="0" y="75" indicatorGap="5">
+		<mx:FormItem label="Longitude:" width="250" height="35">
+			<s:Label id="X_Geog"/>
+			<s:Label id="X_Merc"/>
+		</mx:FormItem>
+		<mx:FormItem label="Latitude:" width="250">
+			<s:Label id="Y_Geog"/>
+			<s:Label id="Y_Merc"/>
+		</mx:FormItem>
+	</mx:Form>
+	<s:controlBarContent>
+		<s:HGroup width="100%" horizontalAlign="center">
+			<s:Button id="locate" label="Locate"/>
+			<s:Button label="Reset" click="resetForm(event)"/>
+		</s:HGroup>
+	</s:controlBarContent>
+
+</s:TitleWindow>

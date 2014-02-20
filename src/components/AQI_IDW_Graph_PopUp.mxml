@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:fc="com.fusioncharts.components.*"
+			   x="501" y="473" width="460" height="427"
+			   title="Ontario Air Quality Index (AQI) Surface Vector - 1km Resolution"
+			   close="widget_closeHandler()"
+			   creationComplete="widget_creationCompleteHandler()"
+			   windowMoving="widget_windowMovingHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import flash.media.Sound;
+			import flash.net.URLRequest;
+			
+			import mx.managers.PopUpManager;
+			
+			import spark.events.TitleWindowBoundsEvent;
+			
+			private function widget_creationCompleteHandler():void
+			{
+				var sound:Sound = new Sound(new URLRequest("assets/sounds/vector.mp3"));
+				sound.play();
+			}
+			
+			private function widget_windowMovingHandler(event:TitleWindowBoundsEvent):void
+			{
+				if (event.afterBounds.left < -1)
+				{
+					event.afterBounds.left = -1;
+				} 
+				else if (event.afterBounds.right > systemManager.stage.stageWidth)
+				{
+					event.afterBounds.left = systemManager.stage.stageWidth - event.afterBounds.width + 1;
+				}
+				
+				if (event.afterBounds.top < 44)
+				{
+					event.afterBounds.top = 44;
+				}
+				else if (event.afterBounds.bottom > systemManager.stage.stageHeight)
+				{
+					event.afterBounds.top = systemManager.stage.stageHeight - event.afterBounds.height;
+				}
+			}
+			
+			private function widget_closeHandler():void
+			{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	
+	<fc:FusionCharts id="fc"
+					 FCChartType="Area2D"
+					 FCDataXML="{parentApplication.aqi}"
+					 x="0" y="0"
+					 width="458" height="394">
+		<fc:FCChartData ChartNoDataText=" " />
+	</fc:FusionCharts>
+
+</s:TitleWindow>

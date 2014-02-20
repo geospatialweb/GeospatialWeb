@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:fx="http://ns.adobe.com/mxml/2009"
+		   xmlns:mx="library://ns.adobe.com/flex/mx"
+		   creationComplete="creationCompleteHandler()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.esri.ags.Graphic;
+			import com.esri.ags.SpatialReference;
+			import com.esri.ags.geometry.MapPoint;
+			import com.esri.ags.geometry.WebMercatorMapPoint;
+			import com.esri.ags.symbols.SimpleMarkerSymbol;
+			
+			import components.Geocoder_Street_PopUp;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			private var popup:Geocoder_Street_PopUp;
+			private var service:HTTPService = new HTTPService();
+			
+			private function creationCompleteHandler():void
+			{
+				popup = PopUpManager.createPopUp(this, Geocoder_Street_PopUp) as Geocoder_Street_PopUp;
+				popup["locate"].addEventListener(MouseEvent.CLICK, httpService);
+				popup.addEventListener(Event.CLOSE, closeModule);
+				popup["street_number"].setFocus();
+			}
+			
+			private function httpService(event:MouseEvent):void
+			{
+				var params:Object = new Object();
+				params.stno = popup.street_number.text;
+				params.addresst = popup.street_name.text;
+				params.city = popup.municipality.text;
+				params.prov = popup.province.selectedItem.abbr;
+				
+				service.url = "http://www.geospatialweb.ca/rest/api/geocoder/geocode_street.php";
+				service.method = "POST";
+				service.resultFormat = "e4x";
+				service.addEventListener("result", httpResult);
+				service.addEventListener("fault", httpFault);
+				service.showBusyCursor = true;
+				service.send(params);
+			}
+			
+			private function httpResult(event:ResultEvent):void
+			{
+				var result:XML = new XML(event.result.toString());
+				
+				if (result.children().length() == 2)
+				{
+					var lng:Number = parseFloat(result.longt.toString());
+					var lat:Number = parseFloat(result.latt.toString());
+					var latlng:MapPoint = new MapPoint(lng, lat, new SpatialReference(4326));
+					var xy:MapPoint = new WebMercatorMapPoint(lng, lat);
+					
+					displayResult(latlng, xy);
+					addMarker(xy);
+				}
+				else
+				{
+					popup.label.setStyle("color", 0xFF0000);
+					popup.label.text = "Incorrect entry. Please try again:";
+					popup["street_number"].setFocus();
+				}
+			} 
+			
+			private function httpFault(event:FaultEvent):void
+			{
+				var fault:String = event.message.toString();
+				Alert.show(fault);
+			}
+			
+			private function displayResult(latlng:MapPoint, xy:MapPoint):void
+			{
+				popup.label.setStyle("color", 0x00AA00);
+				popup.label.text = "Enter Street Address:";
+				popup.X_Geog.text = latlng.x.toString() + " decimal degrees";
+				popup.Y_Geog.text = latlng.y.toString() + " decimal degrees";
+				popup.X_Merc.text = Math.round(xy.x).toString() + " metres";
+				popup.Y_Merc.text = Math.round(xy.y).toString() + " metres";
+			}
+			
+			private function addMarker(xy:MapPoint):void
+			{
+				var marker:Graphic = new Graphic(xy, new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_DIAMOND, 10, 0xFF0000, 0.75));
+				
+				parentApplication.map.level = 14;
+				parentApplication.map.centerAt(xy);
+				parentApplication.gl.add(marker);
+			}
+			
+			private function closeModule(event:CloseEvent):void
+			{
+				PopUpManager.removePopUp(popup);
+				popup["locate"].removeEventListener(MouseEvent.CLICK, httpService);
+				popup.removeEventListener(Event.CLOSE, closeModule);
+				service.removeEventListener("result", httpResult);
+				service.removeEventListener("fault", httpFault);
+				parentApplication.tbb.selectedIndex = "-1";
+				parentApplication.ml.url = "";
+			}
+		]]>
+	</fx:Script>
+
+</mx:Module>
