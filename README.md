@@ -1,7 +1,7 @@
 GeospatialWeb
 =============
 
-This is the source code for my portfolio website that showcases some preliminary work for an online Masters GIS thesis at Penn State University, if I ever get around to committing to it! Unlikely, since I'm having too much fun taking wicked courses from the top USA universities like linear algebra (vectors and matrices) for free as noted in my LinkedIn profile.
+This is the source code for my portfolio website that showcases some preliminary work for an online Masters GIS thesis at Penn State University, if I ever get around to committing to it! Unlikely, since I'm having too much fun taking wicked courses from the top USA universities like linear algebra (vectors and matrices) for free as noted in my LinkedIn profile lcated at http://www.linkedin.com/in/geospatialweb.
 
 I have assembled an ongoing database of hourly air quality readings for 40 reporting stations throughout Ontario since January 1, 2007. Since the Ontario Ministry of Environment does not provide API data access, I have to screen scrape the current readings off their website and parse the XHTML using E4X. Works great until they change the coding of the web pages! It has only happened once so I can't complain. What I can complain about is their public sector pensions, but that is another story for another day.
 
