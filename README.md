@@ -5,7 +5,7 @@ This is the source code for my portfolio website that showcases some preliminary
 
 I have assembled an ongoing database of hourly air quality readings for 40 reporting stations throughout Ontario since January 1, 2007. Given the Ontario Ministry of Environment does not provide API data access, I have to screen scrape the current readings off their website and parse the XHTML using E4X. Works great until they change the coding of the web pages! It has only happened once so I can't complain.
 
-There is alot of REST going on here. The MOE website plus the Google Elevation API and the geocoder.ca API until one day it was no longer free and that was that. And more geoJSON since I can parse it in two lines of code on the client.
+There is alot of REST going on here. The MOE website plus the Google Elevation API and the geocoder.ca API until one day it was no longer free and that was that.
 
 I wrote my first PHP classes as a learning experience. And I also wrote my first static method in Flex that accepts an array collection of data with the geographic reference expressed as an OGC-compliant datatype and returns an array of ESRI Graphic objects that can be added to a map layer - since the ESRI APIs cannot work with spatial datatypes and methods such as WKT.
 
@@ -21,6 +21,8 @@ So perhaps using frequency domain analysis and data sonification one can hear wa
 
 To what end? Well, Doppler radar can give us maybe 15 minutes advance warning of an impending tornado and good luck if one lives in a nursing home like my mother. Or an avalanche, tsunami or earthquake. Maybe there is other ways to "predict" the unpredictable with higher degrees of precision and accuracy that can help save lives.
 
-So last Fall, I took a free online music technology course from Georgia Tech and learned how to convert data into sound. The Python script is the scripts directory. I took a random month of hourly data from the air quality database for each reporting station and sonified the data using the EarSketch API for the REAPER digital audio workstation that we learned in class and incorporated the sound files into the website. I haven't done much else to date but it is a good start. At least I know it can be done and at the outset I didn't know if it could be done. The mp3 collection is in the assets directory.
+So last Fall, I took a free online music technology course from Georgia Tech and learned how to convert data into sound. The Python script is the scripts directory. I took a random month of hourly data from the air quality database for each reporting station and sonified the data using the EarSketch API for the REAPER digital audio workstation that we learned in class and incorporated the sound files into the website.
+
+I haven't done much else to date but it is a good start. At least I know it can be done and at the outset I didn't know if it could be done. The mp3 collection is in the assets directory.
 
 I have varied interests and varied skill sets. I love geospatial web development and that is why I do it for a living...
