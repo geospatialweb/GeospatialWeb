@@ -37,7 +37,7 @@
 			
 			private function httpService(event:MouseEvent):void
 			{
-				service.url = "http://www.geospatialweb.ca/rest/api/geocoder/google_geocoder.php?address=" + popup.address.text + "&city=" + popup.municipality.text + "&prov=" + popup.province.selectedItem.prov;
+				service.url = "http://www.geospatialweb.ca/rest/api/google/geocoder.php?address=" + popup.address.text + "&city=" + popup.municipality.text + "&prov=" + popup.province.selectedItem.prov;
 				service.method = "GET";
 				service.resultFormat = "e4x";
 				service.addEventListener("result", httpResult);
