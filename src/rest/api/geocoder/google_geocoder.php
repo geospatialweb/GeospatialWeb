@@ -1,11 +1,10 @@
 <?php
+$url = 'https://maps.googleapis.com/maps/api/geocode/xml?address=' . $_GET['address'] . ',+' . $_GET['city'] . ',+' . $_GET['prov'] . ',+Canada&sensor=false';
+$url = str_replace(" ","%20",$url);
+
 $ch = curl_init();
-$data = array('postal' => $_POST['postal'], 'geoit' => 'xml');
-$query = http_build_query($data);
-$url = 'http://www.geocoder.ca/';
 
 curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
 

@@ -49,7 +49,7 @@
 				stationData.method = "GET";
 				stationData.resultFormat = "text";
 				stationData.addEventListener("result", stationData_resultHandler);
-				stationData.addEventListener("fault", faultHandler);
+				stationData.addEventListener("fault", stationData_faultHandler);
 				stationData.send();
 			}
 
@@ -76,7 +76,7 @@
 				}
 			}
 			
-			private function faultHandler(event:FaultEvent):void
+			private function stationData_faultHandler(event:FaultEvent):void
 			{
 				var fault:String = event.message.toString();
 				Alert.show(fault);

@@ -78,10 +78,10 @@
 				
 				for (var i:int=0; i<array.length-1; i++)
 				{
-					aqi = aqi + "<set value='" + array[i] + "' />"
+					aqi += "<set value='" + array[i] + "' />"
 				}
 				
-				aqi = aqi + "</chart>";
+				aqi += "</chart>";
 				
 				parentApplication.aqi = aqi;
 				parentApplication.aqi_popUp = PopUpManager.createPopUp(this, AQI_IDW_Graph_PopUp) as AQI_IDW_Graph_PopUp;
@@ -91,7 +91,7 @@
 			{
 				if (parentApplication.demArray.length > 1)
 				{
-					elevation.url = "http://www.geospatialweb.ca/rest/api/google/elevation.php?path=" + parentApplication.demString.substring(0, parentApplication.demString.length - 1);
+					elevation.url = "http://www.geospatialweb.ca/rest/api/google/elevation_path.php?path=" + parentApplication.demString.substring(0, parentApplication.demString.length - 1);
 					elevation.method = "GET";
 					elevation.resultFormat = "e4x";
 					elevation.addEventListener("result", elevation_resultHandler);
@@ -111,10 +111,10 @@
 				
 				for (var i:int=0; i<result.children().length()-1; i++)
 				{
-					dem = dem + "<set value='" + parseFloat(result..elevation[i].toString()).toFixed(0) + "' />"
+					dem += "<set value='" + parseFloat(result..elevation[i].toString()).toFixed(0) + "' />"
 				}
 				
-				dem = dem + "</chart>";
+				dem += "</chart>";
 				
 				parentApplication.dem = dem;
 				parentApplication.dem_popUp = PopUpManager.createPopUp(this, Google_Elevation_PopUp) as Google_Elevation_PopUp;

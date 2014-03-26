@@ -11,7 +11,7 @@
 			import com.esri.ags.geometry.WebMercatorMapPoint;
 			import com.esri.ags.symbols.SimpleMarkerSymbol;
 			
-			import components.Geocoder_Postalcode_PopUp;
+			import components.Google_Geocoder_PopUp;
 			
 			import mx.controls.Alert;
 			import mx.events.CloseEvent;
@@ -20,76 +20,64 @@
 			import mx.rpc.events.ResultEvent;
 			import mx.rpc.http.HTTPService;
 			
-			private var popup:Geocoder_Postalcode_PopUp;
+			private var popup:Google_Geocoder_PopUp;
 			private var service:HTTPService = new HTTPService();
 			
 			private function creationCompleteHandler():void
 			{
-				popup = PopUpManager.createPopUp(this, Geocoder_Postalcode_PopUp) as Geocoder_Postalcode_PopUp;
+				parentApplication.gl.clear();
+				parentApplication.gll.clear();
+				parentApplication.map.removeLayer(parentApplication.kmlLayer);
+				
+				popup = PopUpManager.createPopUp(this, Google_Geocoder_PopUp) as Google_Geocoder_PopUp;
 				popup["locate"].addEventListener(MouseEvent.CLICK, httpService);
 				popup.addEventListener(Event.CLOSE, closeModule);
-				popup["postal_code"].setFocus();
+				popup["address"].setFocus();
 			}
 			
 			private function httpService(event:MouseEvent):void
 			{
-				var params:Object = new Object();
-				params.postal = popup.postal_code.text;
-				
-				service.url = "http://www.geospatialweb.ca/rest/api/geocoder/geocode_postalcode.php";
-				service.method = "POST";
+				service.url = "http://www.geospatialweb.ca/rest/api/geocoder/google_geocoder.php?address=" + popup.address.text + "&city=" + popup.municipality.text + "&prov=" + popup.province.selectedItem.prov;
+				service.method = "GET";
 				service.resultFormat = "e4x";
 				service.addEventListener("result", httpResult);
 				service.addEventListener("fault", httpFault);
 				service.showBusyCursor = true;
-				service.send(params);
-			} 
-			
-			private function httpResult(event:ResultEvent):void
-			{
-				var result:XML = new XML(event.result.toString());
-				
-				if (result.children().length() == 2)
-				{
-					var lng:Number = parseFloat(result.longt.toString());
-					var lat:Number = parseFloat(result.latt.toString());
-					var latlng:MapPoint = new MapPoint(lng, lat, new SpatialReference(4326));
-					var xy:MapPoint = new WebMercatorMapPoint(lng, lat);
-					
-					displayResult(latlng, xy);
-					addMarker(xy);
-				}
-				else
-				{
-					popup.label.setStyle("color", 0xFF0000);
-					popup.label.text="Incorrect entry. Please try again:";
-					popup["postal_code"].setFocus();
-				}
-			} 
+				service.send();
+			}
 			
 			private function httpFault(event:FaultEvent):void
 			{
 				var fault:String = event.message.toString();
+				
 				Alert.show(fault);
+			}
+			
+			private function httpResult(event:ResultEvent):void
+			{
+				var result:XML = new XML(event.result.toString());
+				var lat:Number = parseFloat(result..location.lat.toString());
+				var lng:Number = parseFloat(result..location.lng.toString());
+				var latlng:MapPoint = new MapPoint(lng, lat, new SpatialReference(4326));
+				var xy:MapPoint = new WebMercatorMapPoint(lng, lat);
+					
+				addMarker(xy);
+				displayResult(latlng, xy);
+			} 
+			
+			private function addMarker(geometry:MapPoint):void
+			{
+				parentApplication.map.level = 15;
+				parentApplication.map.centerAt(geometry);
+				parentApplication.gl.add(new Graphic(geometry, new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_DIAMOND, 10, 0xFF0000, 0.75)));
 			}
 			
 			private function displayResult(latlng:MapPoint, xy:MapPoint):void
 			{
-				popup.label.setStyle("color", 0x00AA00);
-				popup.label.text = "Enter Postal Code:";
 				popup.X_Geog.text = latlng.x.toString() + " decimal degrees";
 				popup.Y_Geog.text = latlng.y.toString() + " decimal degrees";
 				popup.X_Merc.text = Math.round(xy.x).toString() + " metres";
 				popup.Y_Merc.text = Math.round(xy.y).toString() + " metres";
-			}
-			
-			private function addMarker(xy:MapPoint):void
-			{
-				var marker:Graphic = new Graphic(xy, new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_DIAMOND, 10, 0xFF0000, 0.75));
-				
-				parentApplication.map.level = 14;
-				parentApplication.map.centerAt(xy);
-				parentApplication.gl.add(marker);
 			}
 			
 			private function closeModule(event:CloseEvent):void
@@ -97,8 +85,11 @@
 				PopUpManager.removePopUp(popup);
 				popup["locate"].removeEventListener(MouseEvent.CLICK, httpService);
 				popup.removeEventListener(Event.CLOSE, closeModule);
+				
 				service.removeEventListener("result", httpResult);
 				service.removeEventListener("fault", httpFault);
+				
+				parentApplication.gl.clear();
 				parentApplication.tbb.selectedIndex = "-1";
 				parentApplication.ml.url = "";
 			}

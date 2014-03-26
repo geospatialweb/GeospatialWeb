@@ -9,9 +9,9 @@
 			import com.esri.ags.geometry.MapPoint;
 			import com.esri.ags.geometry.WebMercatorMapPoint;
 			import com.esri.ags.utils.WebMercatorUtil;
+			import com.healthunit.transform.SQLFeature;
 			
 			import components.AQI_PopUp;
-			import components.SQLFeature;
 			
 			import mx.collections.ArrayCollection;
 			import mx.events.CloseEvent;
@@ -74,7 +74,6 @@
 				popUp["submit"].addEventListener(MouseEvent.CLICK, popUp_submit_clickHandler);
 				popUp["clear"].addEventListener(MouseEvent.CLICK, popUp_clear_clickHandler);
 				popUp.addEventListener(Event.CLOSE, popUp_closeHandler);
-
 				getSQLFeatures();
 			}
 			
@@ -89,6 +88,7 @@
 				
 				for (var i:int=0; i < graphic.length; i++)
 				{
+//					graphic[i].symbol.color = "0xCC00CC";
 					graphic[i].symbol.color = "0x009900";
 					graphic[i].addEventListener(MouseEvent.ROLL_OVER, mouse_rollOverHandler);
 					graphic[i].addEventListener(MouseEvent.ROLL_OUT, mouse_rollOutHandler);

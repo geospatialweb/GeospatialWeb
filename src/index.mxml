@@ -136,6 +136,11 @@
 						ml.url = "widgets/Export_to_PDF.swf";
 						break;
 					}
+					case "geocode":
+					{
+						ml.url = "widgets/Google_Geocoder.swf";
+						break;
+					}
 				}
 			}
 			
@@ -205,7 +210,7 @@
 		<mx:ToggleButtonBar id="tbb"
 							itemClick="tbb_itemClickHandler(event)"
 							labelField="null"
-							paddingLeft="100"
+							paddingLeft="40"
 							selectedIndex="0"
 							height="30">
 			<mx:dataProvider>
@@ -221,15 +226,18 @@
 				<fx:Object icon="@Embed(source='assets/images/tools.png')"
 						   label="pdf"
 						   toolTip="PDF Map Export" />
+				<fx:Object icon="@Embed(source='assets/images/i_pin4.png')"
+						   label="geocode"
+						   toolTip="Address Geocoder" />
 			</mx:dataProvider>
 		</mx:ToggleButtonBar>
 		<s:VGroup>
 			<mx:Label id="degrees"
 					  fontSize="10"
-					  paddingLeft="185" paddingTop="4" />
+					  paddingLeft="175" paddingTop="4" />
 			<mx:Label id="metres"
 					  fontSize="10"
-					  paddingLeft="185" paddingTop="-11" />
+					  paddingLeft="175" paddingTop="-11" />
 		</s:VGroup>
 	</s:controlBarContent>
 	

@@ -3,7 +3,7 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
 			   xmlns:s="library://ns.adobe.com/flex/spark"
 			   xmlns:fc="com.fusioncharts.components.*"
-			   x="157" y="195" width="313" height="325" backgroundAlpha="0"
+			   x="157" y="183" width="313" height="325" backgroundAlpha="0"
 			   title="Diagnostic Surface Vector Scanner"
 			   close="widget_closeHandler()"
 			   creationComplete="widget_creationCompleteHandler()"
