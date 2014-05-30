@@ -7,7 +7,7 @@ This is the source code for my portfolio website that showcases some preliminary
 
 I have assembled an ongoing database of hourly air quality readings for 40 reporting stations throughout Ontario since January 1, 2007. Given the Ontario Ministry of Environment does not provide API data access, I have to screen scrape the current readings off their website and parse the XHTML using E4X. Works great until they change the coding of the web pages! It has only happened once, so I can't complain.
 
-There is alot of REST and AJAX going on here. The MOE website plus the Google Elevation API and Google Geocoder API.
+There is alot of REST and AJAX going on here. The MOE website plus the Google Elevation API and Google Geocoder API. And integration with ArcGIS Server geoprocessing services with ArcPY back-end producing and returning PDF reports on demand.
 
 I wrote my first PHP classes as a learning experience. And I also wrote my first static method in Flex that accepts an array collection of data with the geographic reference expressed as an OGC-compliant datatype and returns an array of ESRI Graphic objects that can be added to a map layer - since the ESRI APIs cannot work with spatial datatypes and methods such as WKT.
 
