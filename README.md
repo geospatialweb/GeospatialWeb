@@ -5,7 +5,7 @@ http://geospatialweb.ca:8000
 
 This is the source code for my portfolio website that showcases some preliminary work for an online Masters GIS thesis at Penn State University, if I ever get around to committing to it! Unlikely, since I'm having too much fun taking wicked courses such as complexity science and dynamical systems from top USA universities for free as noted in my LinkedIn profile located at http://www.linkedin.com/in/geospatialweb. I'm big on continuous learning and distance learning fits the bill nicely.
 
-I have assembled an ongoing database of hourly air quality readings for 40 reporting stations throughout Ontario since January 1, 2007. Given the Ontario Ministry of Environment does not provide API data access, I have to screen scrape the current readings off their website and parse the XHTML using E4X. Works great until they change the coding of the web pages! It has only happened once, so I can't complain.
+I have assembled an ongoing database of hourly air quality readings for 40 reporting stations throughout Ontario since January 1, 2007. Given the Ontario Ministry of Environment does not provide API data access, I have to screen scrape the current readings off their website and parse the XHTML using E4X. Works great until they change the coding of the web pages! It has only happened once, so I can't complain. Well, it finally happened recently and I don't have time right now to re-write the screen scraping code so display of hourly air quality readings is non-functional presently.
 
 There is alot of REST and AJAX going on here. The MOE website plus the Google Elevation API and Google Geocoder API. And integration with ArcGIS Server geoprocessing services with ArcPY back-end producing and returning PDF reports on demand.
 
